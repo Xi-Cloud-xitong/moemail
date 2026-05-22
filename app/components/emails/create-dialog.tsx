@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,14 +19,6 @@ interface CreateDialogProps {
 
 const RANDOM_TOP_DOMAIN = "__random__"
 
-function pickRandomSubdomain(domains: string[]): string {
-  return domains[Math.floor(Math.random() * domains.length)]
-}
-
-function pickRandomTopDomain(topLevelDomains: string[]): string {
-  return topLevelDomains[Math.floor(Math.random() * topLevelDomains.length)]
-}
-
 export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { config } = useConfig()
   const t = useTranslations("emails.create")
@@ -37,16 +29,12 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [emailName, setEmailName] = useState("")
   const [selectedTopDomain, setSelectedTopDomain] = useState("")
   const [actualDomain, setActualDomain] = useState("")
+  const [refreshKey, setRefreshKey] = useState(0)
   const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
 
   const generateRandomName = () => setEmailName(nanoid(8))
-
-  const randomizeSubdomain = (topDomain: string) => {
-    const subdomains = config?.domainMap?.[topDomain] || [topDomain]
-    setActualDomain(pickRandomSubdomain(subdomains))
-  }
 
   const copyEmailAddress = () => {
     copyToClipboard(`${emailName}@${actualDomain}`)
@@ -102,34 +90,42 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     }
   }
 
-  useEffect(() => {
-    if ((config?.topLevelDomains?.length ?? 0) > 0) {
-      setSelectedTopDomain(RANDOM_TOP_DOMAIN)
-      handleRandomize()
-    }
+  const doRandomize = useCallback(() => {
+    if (!config?.topLevelDomains?.length) return
+    const topDomain = config.topLevelDomains[Math.floor(Math.random() * config.topLevelDomains.length)]
+    const subdomains = config.domainMap?.[topDomain] || [topDomain]
+    setActualDomain(subdomains[Math.floor(Math.random() * subdomains.length)])
   }, [config])
 
-  const handleRandomize = () => {
-    if (!config?.topLevelDomains?.length) return
-    const topDomain = pickRandomTopDomain(config.topLevelDomains)
-    const subdomains = config.domainMap?.[topDomain] || [topDomain]
-    setActualDomain(pickRandomSubdomain(subdomains))
+  useEffect(() => {
+    if (config?.topLevelDomains?.length) {
+      setSelectedTopDomain(RANDOM_TOP_DOMAIN)
+      doRandomize()
+    }
+  }, [config, doRandomize])
+
+  useEffect(() => {
+    if (refreshKey > 0) {
+      if (selectedTopDomain === RANDOM_TOP_DOMAIN) {
+        doRandomize()
+      } else {
+        const subdomains = config?.domainMap?.[selectedTopDomain] || [selectedTopDomain]
+        setActualDomain(subdomains[Math.floor(Math.random() * subdomains.length)])
+      }
+    }
+  }, [refreshKey])
+
+  const handleRefreshSubdomain = () => {
+    setRefreshKey(k => k + 1)
   }
 
   const handleDomainChange = (topDomain: string) => {
     setSelectedTopDomain(topDomain)
     if (topDomain === RANDOM_TOP_DOMAIN) {
-      handleRandomize()
+      doRandomize()
     } else {
-      randomizeSubdomain(topDomain)
-    }
-  }
-
-  const handleRefreshSubdomain = () => {
-    if (selectedTopDomain === RANDOM_TOP_DOMAIN) {
-      handleRandomize()
-    } else {
-      randomizeSubdomain(selectedTopDomain)
+      const subdomains = config?.domainMap?.[topDomain] || [topDomain]
+      setActualDomain(subdomains[Math.floor(Math.random() * subdomains.length)])
     }
   }
 
