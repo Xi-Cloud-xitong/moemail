@@ -17,8 +17,14 @@ interface CreateDialogProps {
   onEmailCreated: () => void
 }
 
+const RANDOM_TOP_DOMAIN = "__random__"
+
 function pickRandomSubdomain(domains: string[]): string {
   return domains[Math.floor(Math.random() * domains.length)]
+}
+
+function pickRandomTopDomain(topLevelDomains: string[]): string {
+  return topLevelDomains[Math.floor(Math.random() * topLevelDomains.length)]
 }
 
 export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
@@ -98,19 +104,33 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
 
   useEffect(() => {
     if ((config?.topLevelDomains?.length ?? 0) > 0) {
-      const first = config!.topLevelDomains[0]
-      setSelectedTopDomain(first)
-      randomizeSubdomain(first)
+      setSelectedTopDomain(RANDOM_TOP_DOMAIN)
+      handleRandomize()
     }
   }, [config])
 
+  const handleRandomize = () => {
+    if (!config?.topLevelDomains?.length) return
+    const topDomain = pickRandomTopDomain(config.topLevelDomains)
+    const subdomains = config.domainMap?.[topDomain] || [topDomain]
+    setActualDomain(pickRandomSubdomain(subdomains))
+  }
+
   const handleDomainChange = (topDomain: string) => {
     setSelectedTopDomain(topDomain)
-    randomizeSubdomain(topDomain)
+    if (topDomain === RANDOM_TOP_DOMAIN) {
+      handleRandomize()
+    } else {
+      randomizeSubdomain(topDomain)
+    }
   }
 
   const handleRefreshSubdomain = () => {
-    randomizeSubdomain(selectedTopDomain)
+    if (selectedTopDomain === RANDOM_TOP_DOMAIN) {
+      handleRandomize()
+    } else {
+      randomizeSubdomain(selectedTopDomain)
+    }
   }
 
   return (
@@ -140,6 +160,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value={RANDOM_TOP_DOMAIN}>@随机</SelectItem>
                   {config?.topLevelDomains?.map(d => (
                     <SelectItem key={d} value={d}>@{d}</SelectItem>
                   ))}
