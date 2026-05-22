@@ -9,6 +9,8 @@ interface Config {
   defaultRole: Exclude<Role, typeof ROLES.EMPEROR>
   emailDomains: string
   emailDomainsArray: string[]
+  topLevelDomains: string[]
+  domainMap: Record<string, string[]>
   adminContact: string
   maxEmails: number
 }
@@ -30,11 +32,37 @@ const useConfigStore = create<ConfigStore>((set) => ({
       const res = await fetch("/api/config")
       if (!res.ok) throw new Error("获取配置失败")
       const data = await res.json() as Config
+      const domainsArray = data.emailDomains.split(',')
+
+      // Build domain map: top-level domain -> [itself, subdomains...]
+      const domainMap: Record<string, string[]> = {}
+      for (const d of domainsArray) {
+        const parts = d.split('.')
+        // For domains like mail.xi-clouds.cn, the top-level is xi-clouds.cn (last 2 parts for .cn/.top, last 2 for .xyz)
+        // Simple heuristic: if 3+ parts, first part is subdomain
+        let topLevel: string
+        if (parts.length >= 3) {
+          topLevel = parts.slice(1).join('.')
+        } else {
+          topLevel = d
+        }
+        if (!domainMap[topLevel]) {
+          domainMap[topLevel] = [topLevel]
+        }
+        if (d !== topLevel) {
+          domainMap[topLevel].push(d)
+        }
+      }
+
+      const topLevelDomains = Object.keys(domainMap).sort()
+
       set({
         config: {
           defaultRole: data.defaultRole || ROLES.CIVILIAN,
           emailDomains: data.emailDomains,
-          emailDomainsArray: data.emailDomains.split(','),
+          emailDomainsArray: domainsArray,
+          topLevelDomains,
+          domainMap,
           adminContact: data.adminContact || "",
           maxEmails: Number(data.maxEmails) || EMAIL_CONFIG.MAX_ACTIVE_EMAILS
         },

@@ -8,15 +8,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Copy, Plus, RefreshCw } from "lucide-react"
 import { useToast } from "@/components/ui/use-toast"
 import { nanoid } from "nanoid"
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { EXPIRY_OPTIONS } from "@/types/email"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCopy } from "@/hooks/use-copy"
 import { useConfig } from "@/hooks/use-config"
 
 interface CreateDialogProps {
   onEmailCreated: () => void
+}
+
+function pickRandomSubdomain(domains: string[]): string {
+  return domains[Math.floor(Math.random() * domains.length)]
 }
 
 export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
@@ -27,15 +29,21 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [emailName, setEmailName] = useState("")
-  const [currentDomain, setCurrentDomain] = useState("")
-  const [expiryTime, setExpiryTime] = useState(EXPIRY_OPTIONS[1].value.toString())
+  const [selectedTopDomain, setSelectedTopDomain] = useState("")
+  const [actualDomain, setActualDomain] = useState("")
+  const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
 
   const generateRandomName = () => setEmailName(nanoid(8))
 
+  const randomizeSubdomain = (topDomain: string) => {
+    const subdomains = config?.domainMap?.[topDomain] || [topDomain]
+    setActualDomain(pickRandomSubdomain(subdomains))
+  }
+
   const copyEmailAddress = () => {
-    copyToClipboard(`${emailName}@${currentDomain}`)
+    copyToClipboard(`${emailName}@${actualDomain}`)
   }
 
   const createEmail = async () => {
@@ -55,7 +63,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: emailName,
-          domain: currentDomain,
+          domain: actualDomain,
           expiryTime: parseInt(expiryTime)
         })
       })
@@ -89,10 +97,21 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   }
 
   useEffect(() => {
-    if ((config?.emailDomainsArray?.length ?? 0) > 0) {
-      setCurrentDomain(config?.emailDomainsArray[0] ?? "")
+    if ((config?.topLevelDomains?.length ?? 0) > 0) {
+      const first = config!.topLevelDomains[0]
+      setSelectedTopDomain(first)
+      randomizeSubdomain(first)
     }
   }, [config])
+
+  const handleDomainChange = (topDomain: string) => {
+    setSelectedTopDomain(topDomain)
+    randomizeSubdomain(topDomain)
+  }
+
+  const handleRefreshSubdomain = () => {
+    randomizeSubdomain(selectedTopDomain)
+  }
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -104,7 +123,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogTitle>{t("title")}
+          </DialogTitle>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div className="flex gap-2">
@@ -114,13 +134,13 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               placeholder={t("namePlaceholder")}
               className="flex-1"
             />
-            {(config?.emailDomainsArray?.length ?? 0) > 1 && (
-              <Select value={currentDomain} onValueChange={setCurrentDomain}>
+            {(config?.topLevelDomains?.length ?? 0) > 0 && (
+              <Select value={selectedTopDomain} onValueChange={handleDomainChange}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {config?.emailDomainsArray?.map(d => (
+                  {config?.topLevelDomains?.map(d => (
                     <SelectItem key={d} value={d}>@{d}</SelectItem>
                   ))}
                 </SelectContent>
@@ -136,37 +156,29 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             </Button>
           </div>
 
-          <div className="flex items-center gap-4">
-            <Label className="shrink-0 text-muted-foreground">{t("expiryTime")}</Label>
-            <RadioGroup
-              value={expiryTime}
-              onValueChange={setExpiryTime}
-              className="flex gap-6"
-            >
-              {EXPIRY_OPTIONS.map((option, index) => {
-                const labels = [t("oneHour"), t("oneDay"), t("threeDays"), t("permanent")]
-                return (
-                  <div key={option.value} className="flex items-center gap-2">
-                    <RadioGroupItem value={option.value.toString()} id={option.value.toString()} />
-                    <Label htmlFor={option.value.toString()} className="cursor-pointer text-sm">
-                      {labels[index]}
-                    </Label>
-                  </div>
-                )
-              })}
-            </RadioGroup>
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <span className="shrink-0">{t("expiryTime")}:</span>
+            <span>30分钟</span>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="shrink-0">{t("domain")}:</span>
             {emailName ? (
               <div className="flex items-center gap-2 min-w-0">
-                <span className="truncate">{`${emailName}@${currentDomain}`}</span>
+                <span className="truncate">{`${emailName}@${actualDomain}`}</span>
                 <div
                   className="shrink-0 cursor-pointer hover:text-primary transition-colors"
                   onClick={copyEmailAddress}
+                  title="复制"
                 >
                   <Copy className="size-4" />
+                </div>
+                <div
+                  className="shrink-0 cursor-pointer hover:text-primary transition-colors"
+                  onClick={handleRefreshSubdomain}
+                  title="换一个二级域名"
+                >
+                  <RefreshCw className="size-4" />
                 </div>
               </div>
             ) : (
@@ -185,4 +197,4 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       </DialogContent>
     </Dialog>
   )
-} 
+}
