@@ -17,5 +17,8 @@
       "binding": "SITE_CONFIG",
       "id": "${KV_NAMESPACE_ID}"
     }
-  ]
+  ],
+  "vars": {
+    "EMAIL_DOMAINS": "0355650.xyz,mail.0355650.xyz,temp.0355650.xyz,xi-clouds.cn,mail.xi-clouds.cn,temp.xi-clouds.cn,xi-clouds.top,mail.xi-clouds.top,temp.xi-clouds.top,xi-cloud.top,mail.xi-cloud.top,temp.xi-cloud.top,xi-work.cn,mail.xi-work.cn,temp.xi-work.cn"
+  }
 }
