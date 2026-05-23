@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,6 +19,19 @@ interface CreateDialogProps {
 
 const RANDOM_KEY = "__random__"
 
+function pickDomain(key: string): string {
+  const state = useConfigStore.getState()
+  const toplevels = state.config?.topLevelDomains ?? []
+  const map = state.config?.domainMap ?? {}
+  if (key === RANDOM_KEY) {
+    const top = toplevels[Math.floor(Math.random() * toplevels.length)]
+    const subs = map[top] ?? [top]
+    return subs[Math.floor(Math.random() * subs.length)]
+  }
+  const subs = map[key] ?? [key]
+  return subs[Math.floor(Math.random() * subs.length)]
+}
+
 export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { config } = useConfig()
   const t = useTranslations("emails.create")
@@ -32,41 +45,33 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { copyToClipboard } = useCopy()
   const domains = config?.topLevelDomains ?? []
 
-  const pick = (key: string) => {
-    const state = useConfigStore.getState()
-    const toplevels = state.config?.topLevelDomains ?? []
-    const map = state.config?.domainMap ?? {}
-    if (key === RANDOM_KEY) {
-      const top = toplevels[Math.floor(Math.random() * toplevels.length)]
-      const subs = map[top] ?? [top]
-      return subs[Math.floor(Math.random() * subs.length)]
-    }
-    const subs = map[key] ?? [key]
-    return subs[Math.floor(Math.random() * subs.length)]
-  }
-
-  const sRef = useRef({ selectedKey: RANDOM_KEY, actualDomain: "" })
-  const [, setTick] = useState(0)
-
-  const refresh = (key: string) => {
-    sRef.current.selectedKey = key
-    sRef.current.actualDomain = pick(key)
-    setTick(t => t + 1)
-  }
+  const [selectedKey, setSelectedKey] = useState(RANDOM_KEY)
+  const [actualDomain, setActualDomain] = useState("")
+  const [refreshCounter, setRefreshCounter] = useState(0)
 
   useEffect(() => {
     if (!domains.length) return
-    refresh(RANDOM_KEY)
+    setSelectedKey(RANDOM_KEY)
+    setActualDomain(pickDomain(RANDOM_KEY))
   }, [config])
+
+  useEffect(() => {
+    if (!domains.length) return
+    setActualDomain(pickDomain(selectedKey))
+  }, [selectedKey, refreshCounter])
 
   const generateRandomName = () => setEmailName(nanoid(8))
 
   const copyEmailAddress = () => {
-    copyToClipboard(`${emailName}@${sRef.current.actualDomain}`)
+    copyToClipboard(`${emailName}@${actualDomain}`)
+  }
+
+  const handleRefreshDomain = () => {
+    setRefreshCounter(c => c + 1)
   }
 
   const handleDomainChange = (key: string) => {
-    refresh(key)
+    setSelectedKey(key)
   }
 
   const createEmail = async () => {
@@ -86,7 +91,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: emailName,
-          domain: sRef.current.actualDomain,
+          domain: actualDomain,
           expiryTime: parseInt(expiryTime)
         })
       })
@@ -141,7 +146,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               className="flex-1"
             />
             {domains.length > 0 && (
-              <Select value={sRef.current.selectedKey} onValueChange={handleDomainChange}>
+              <Select value={selectedKey} onValueChange={handleDomainChange}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -172,7 +177,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             <span className="shrink-0">{t("domain")}:</span>
             {emailName ? (
               <div className="flex items-center gap-2 min-w-0">
-                <span className="truncate">{`${emailName}@${sRef.current.actualDomain}`}</span>
+                <span className="truncate">{`${emailName}@${actualDomain}`}</span>
                 <Button
                   variant="ghost"
                   size="icon"
@@ -187,7 +192,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                   variant="ghost"
                   size="icon"
                   className="shrink-0 h-auto w-auto p-0"
-                  onClick={() => refresh(sRef.current.selectedKey)}
+                  onClick={handleRefreshDomain}
                   title="换一个二级域名"
                   type="button"
                 >
