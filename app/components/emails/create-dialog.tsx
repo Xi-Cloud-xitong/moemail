@@ -29,7 +29,6 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [emailName, setEmailName] = useState("")
   const [selectedKey, setSelectedKey] = useState(RANDOM_KEY)
   const [actualDomain, setActualDomain] = useState("")
-  const [refreshTick, setRefreshTick] = useState(0)
   const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
@@ -37,7 +36,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const selectedKeyRef = useRef(selectedKey)
   selectedKeyRef.current = selectedKey
 
-  const refreshDomain = (key: string) => {
+  const doRefresh = (key: string) => {
     const state = useConfigStore.getState()
     const toplevels = state.config?.topLevelDomains ?? []
     const map = state.config?.domainMap ?? {}
@@ -53,13 +52,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
 
   useEffect(() => {
     if (!domains.length) return
-    refreshDomain(RANDOM_KEY)
+    doRefresh(RANDOM_KEY)
   }, [config])
-
-  useEffect(() => {
-    if (refreshTick === 0) return
-    refreshDomain(selectedKeyRef.current)
-  }, [refreshTick])
 
   const generateRandomName = () => setEmailName(nanoid(8))
 
@@ -69,11 +63,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
 
   const handleDomainChange = (key: string) => {
     setSelectedKey(key)
-    refreshDomain(key)
-  }
-
-  const handleRefreshSubdomain = () => {
-    setRefreshTick(t => t + 1)
+    doRefresh(key)
   }
 
   const createEmail = async () => {
@@ -189,7 +179,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 </div>
                 <div
                   className="shrink-0 cursor-pointer hover:text-primary transition-colors"
-                  onClick={handleRefreshSubdomain}
+                  onClick={() => doRefresh(selectedKeyRef.current)}
                   title="换一个二级域名"
                 >
                   <RefreshCw className="size-4" />
