@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useReducer, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -27,43 +27,46 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [open, setOpen] = useState(false)
   const [loading, setLoading] = useState(false)
   const [emailName, setEmailName] = useState("")
-  const [selectedKey, setSelectedKey] = useState(RANDOM_KEY)
-  const [actualDomain, setActualDomain] = useState("")
   const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
   const domains = config?.topLevelDomains ?? []
-  const selectedKeyRef = useRef(selectedKey)
-  selectedKeyRef.current = selectedKey
 
-  const doRefresh = (key: string) => {
+  const pick = (key: string) => {
     const state = useConfigStore.getState()
     const toplevels = state.config?.topLevelDomains ?? []
     const map = state.config?.domainMap ?? {}
     if (key === RANDOM_KEY) {
       const top = toplevels[Math.floor(Math.random() * toplevels.length)]
       const subs = map[top] ?? [top]
-      setActualDomain(subs[Math.floor(Math.random() * subs.length)])
-    } else {
-      const subs = map[key] ?? [key]
-      setActualDomain(subs[Math.floor(Math.random() * subs.length)])
+      return subs[Math.floor(Math.random() * subs.length)]
     }
+    const subs = map[key] ?? [key]
+    return subs[Math.floor(Math.random() * subs.length)]
+  }
+
+  const sRef = useRef({ selectedKey: RANDOM_KEY, actualDomain: "" })
+  const [, tick] = useReducer(x => x + 1, 0)
+
+  const refresh = (key: string) => {
+    sRef.current.selectedKey = key
+    sRef.current.actualDomain = pick(key)
+    tick()
   }
 
   useEffect(() => {
     if (!domains.length) return
-    doRefresh(RANDOM_KEY)
+    refresh(RANDOM_KEY)
   }, [config])
 
   const generateRandomName = () => setEmailName(nanoid(8))
 
   const copyEmailAddress = () => {
-    copyToClipboard(`${emailName}@${actualDomain}`)
+    copyToClipboard(`${emailName}@${sRef.current.actualDomain}`)
   }
 
   const handleDomainChange = (key: string) => {
-    setSelectedKey(key)
-    doRefresh(key)
+    refresh(key)
   }
 
   const createEmail = async () => {
@@ -83,7 +86,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           name: emailName,
-          domain: actualDomain,
+          domain: sRef.current.actualDomain,
           expiryTime: parseInt(expiryTime)
         })
       })
@@ -138,7 +141,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
               className="flex-1"
             />
             {domains.length > 0 && (
-              <Select value={selectedKey} onValueChange={handleDomainChange}>
+              <Select value={sRef.current.selectedKey} onValueChange={handleDomainChange}>
                 <SelectTrigger className="w-[180px]">
                   <SelectValue />
                 </SelectTrigger>
@@ -169,7 +172,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             <span className="shrink-0">{t("domain")}:</span>
             {emailName ? (
               <div className="flex items-center gap-2 min-w-0">
-                <span className="truncate">{`${emailName}@${actualDomain}`}</span>
+                <span className="truncate">{`${emailName}@${sRef.current.actualDomain}`}</span>
                 <div
                   className="shrink-0 cursor-pointer hover:text-primary transition-colors"
                   onClick={copyEmailAddress}
@@ -179,7 +182,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
                 </div>
                 <div
                   className="shrink-0 cursor-pointer hover:text-primary transition-colors"
-                  onClick={() => doRefresh(selectedKeyRef.current)}
+                  onClick={() => refresh(sRef.current.selectedKey)}
                   title="换一个二级域名"
                 >
                   <RefreshCw className="size-4" />
