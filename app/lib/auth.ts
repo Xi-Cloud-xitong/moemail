@@ -70,7 +70,7 @@ export async function getUserRole(userId: string) {
     where: eq(userRoles.userId, userId),
     with: { role: true },
   })
-  return userRoleRecords[0].role.name
+  return userRoleRecords[0]?.role?.name ?? ROLES.CIVILIAN
 }
 
 export async function checkPermission(permission: Permission) {

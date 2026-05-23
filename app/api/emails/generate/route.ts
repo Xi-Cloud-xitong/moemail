@@ -13,13 +13,20 @@ import { ROLES } from "@/lib/permissions"
 export const runtime = "edge"
 
 export async function POST(request: Request) {
-  const db = createDb()
-  const env = getRequestContext().env
-
-  const userId = await getUserId()
-  const userRole = await getUserRole(userId!)
-
   try {
+    const db = createDb()
+    const env = getRequestContext().env
+
+    const userId = await getUserId()
+    if (!userId) {
+      return NextResponse.json(
+        { error: "未授权" },
+        { status: 401 }
+      )
+    }
+
+    const userRole = await getUserRole(userId)
+
     if (userRole !== ROLES.EMPEROR) {
       const maxEmails = await env.SITE_CONFIG.get("MAX_EMAILS") || EMAIL_CONFIG.MAX_ACTIVE_EMAILS.toString()
       const activeEmailsCount = await db
@@ -27,7 +34,7 @@ export async function POST(request: Request) {
         .from(emails)
         .where(
           and(
-            eq(emails.userId, userId!),
+            eq(emails.userId, userId),
             gt(emails.expiresAt, new Date())
           )
         )
@@ -84,7 +91,7 @@ export async function POST(request: Request) {
       address,
       createdAt: now,
       expiresAt: expires,
-      userId: userId!
+      userId: userId
     }
     
     const result = await db.insert(emails)
