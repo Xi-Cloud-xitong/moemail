@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,10 +19,6 @@ interface CreateDialogProps {
 
 const RANDOM_KEY = "__random__"
 
-function getRandomFrom<T>(arr: T[]): T {
-  return arr[Math.floor(Math.random() * arr.length)]
-}
-
 export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { config } = useConfig()
   const t = useTranslations("emails.create")
@@ -36,20 +32,29 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
-  const domains = config?.topLevelDomains ?? []
-  const domainMap = config?.domainMap ?? {}
 
-  const randomDomain = () => {
+  const domainsRef = useRef<string[]>([])
+  const domainMapRef = useRef<Record<string, string[]>>({})
+  domainsRef.current = config?.topLevelDomains ?? []
+  domainMapRef.current = config?.domainMap ?? {}
+
+  const getRandomItem = useCallback(<T,>(arr: T[]): T => {
+    return arr[Math.floor(Math.random() * arr.length)]
+  }, [])
+
+  const randomDomain = useCallback(() => {
+    const domains = domainsRef.current
+    const map = domainMapRef.current
     if (!domains.length) return
-    const top = getRandomFrom(domains)
-    const subs = domainMap[top] ?? [top]
-    setActualDomain(getRandomFrom(subs))
-  }
+    const top = getRandomItem(domains)
+    const subs = map[top] ?? [top]
+    setActualDomain(getRandomItem(subs))
+  }, [getRandomItem])
 
   useEffect(() => {
-    if (!domains.length) return
+    if (!domainsRef.current.length) return
     randomDomain()
-  }, [config])
+  }, [config, randomDomain])
 
   const generateRandomName = () => setEmailName(nanoid(8))
 
@@ -57,24 +62,27 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     copyToClipboard(`${emailName}@${actualDomain}`)
   }
 
-  const handleDomainChange = (key: string) => {
+  const handleDomainChange = useCallback((key: string) => {
     setSelectedKey(key)
+    const map = domainMapRef.current
     if (key === RANDOM_KEY) {
       randomDomain()
     } else {
-      const subs = domainMap[key] ?? [key]
-      setActualDomain(getRandomFrom(subs))
+      const subs = map[key] ?? [key]
+      setActualDomain(getRandomItem(subs))
     }
-  }
+  }, [randomDomain, getRandomItem])
 
-  const handleRefreshSubdomain = () => {
-    if (selectedKey === RANDOM_KEY) {
+  const handleRefreshSubdomain = useCallback(() => {
+    const key = selectedKey
+    const map = domainMapRef.current
+    if (key === RANDOM_KEY) {
       randomDomain()
     } else {
-      const subs = domainMap[selectedKey] ?? [selectedKey]
-      setActualDomain(getRandomFrom(subs))
+      const subs = map[key] ?? [key]
+      setActualDomain(getRandomItem(subs))
     }
-  }
+  }, [selectedKey, randomDomain, getRandomItem])
 
   const createEmail = async () => {
     if (!emailName.trim()) {
@@ -125,6 +133,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       setLoading(false)
     }
   }
+
+  const domains = config?.topLevelDomains ?? []
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
