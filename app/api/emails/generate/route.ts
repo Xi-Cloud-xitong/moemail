@@ -1,5 +1,4 @@
 import { NextResponse } from "next/server"
-import { nanoid } from "nanoid"
 import { createDb } from "@/lib/db"
 import { emails } from "@/lib/schema"
 import { eq, and, gt, sql } from "drizzle-orm"
@@ -11,6 +10,14 @@ import { getUserRole } from "@/lib/auth"
 import { ROLES } from "@/lib/permissions"
 
 export const runtime = "edge"
+
+const RANDOM_ALPHABET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-"
+
+function generateRandomName(size = 8) {
+  const bytes = new Uint8Array(size)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, byte => RANDOM_ALPHABET[byte & 63]).join("")
+}
 
 export async function POST(request: Request) {
   try {
@@ -70,7 +77,7 @@ export async function POST(request: Request) {
       )
     }
 
-    const address = `${name || nanoid(8)}@${domain}`
+    const address = `${name || generateRandomName(8)}@${domain}`
     const existingEmail = await db.query.emails.findFirst({
       where: eq(sql`LOWER(${emails.address})`, address.toLowerCase())
     })
