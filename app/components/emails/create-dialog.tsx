@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -33,6 +33,8 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
   const domains = config?.topLevelDomains ?? []
+  const selectedKeyRef = useRef(selectedKey)
+  selectedKeyRef.current = selectedKey
 
   const refreshDomain = (key: string) => {
     const state = useConfigStore.getState()
@@ -65,7 +67,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   }
 
   const handleRefreshSubdomain = () => {
-    refreshDomain(selectedKey)
+    refreshDomain(selectedKeyRef.current)
   }
 
   const createEmail = async () => {
