@@ -170,7 +170,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <span className="shrink-0">{t("expiryTime")}:</span>
-            <span>30分钟</span>
+            <span>10分钟</span>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">

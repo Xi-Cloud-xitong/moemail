@@ -4,5 +4,5 @@ export interface ExpiryOption {
 }
 
 export const EXPIRY_OPTIONS: ExpiryOption[] = [
-  { label: '30分钟', value: 1000 * 60 * 30 },
+  { label: '10分钟', value: 1000 * 60 * 10 },
 ]
