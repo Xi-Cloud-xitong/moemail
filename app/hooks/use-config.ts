@@ -22,7 +22,7 @@ interface ConfigStore {
   fetch: () => Promise<void>
 }
 
-const useConfigStore = create<ConfigStore>((set) => ({
+export const useConfigStore = create<ConfigStore>((set) => ({
   config: null,
   loading: false,
   error: null,

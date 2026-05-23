@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -11,7 +11,7 @@ import { nanoid } from "nanoid"
 import { EXPIRY_OPTIONS } from "@/types/email"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { useCopy } from "@/hooks/use-copy"
-import { useConfig } from "@/hooks/use-config"
+import { useConfig, useConfigStore } from "@/hooks/use-config"
 
 interface CreateDialogProps {
   onEmailCreated: () => void
@@ -32,29 +32,26 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
+  const domains = config?.topLevelDomains ?? []
 
-  const domainsRef = useRef<string[]>([])
-  const domainMapRef = useRef<Record<string, string[]>>({})
-  domainsRef.current = config?.topLevelDomains ?? []
-  domainMapRef.current = config?.domainMap ?? {}
-
-  const getRandomItem = useCallback(<T,>(arr: T[]): T => {
-    return arr[Math.floor(Math.random() * arr.length)]
-  }, [])
-
-  const randomDomain = useCallback(() => {
-    const domains = domainsRef.current
-    const map = domainMapRef.current
-    if (!domains.length) return
-    const top = getRandomItem(domains)
-    const subs = map[top] ?? [top]
-    setActualDomain(getRandomItem(subs))
-  }, [getRandomItem])
+  const refreshDomain = (key: string) => {
+    const state = useConfigStore.getState()
+    const toplevels = state.config?.topLevelDomains ?? []
+    const map = state.config?.domainMap ?? {}
+    if (key === RANDOM_KEY) {
+      const top = toplevels[Math.floor(Math.random() * toplevels.length)]
+      const subs = map[top] ?? [top]
+      setActualDomain(subs[Math.floor(Math.random() * subs.length)])
+    } else {
+      const subs = map[key] ?? [key]
+      setActualDomain(subs[Math.floor(Math.random() * subs.length)])
+    }
+  }
 
   useEffect(() => {
-    if (!domainsRef.current.length) return
-    randomDomain()
-  }, [config, randomDomain])
+    if (!domains.length) return
+    refreshDomain(RANDOM_KEY)
+  }, [config])
 
   const generateRandomName = () => setEmailName(nanoid(8))
 
@@ -62,27 +59,14 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     copyToClipboard(`${emailName}@${actualDomain}`)
   }
 
-  const handleDomainChange = useCallback((key: string) => {
+  const handleDomainChange = (key: string) => {
     setSelectedKey(key)
-    const map = domainMapRef.current
-    if (key === RANDOM_KEY) {
-      randomDomain()
-    } else {
-      const subs = map[key] ?? [key]
-      setActualDomain(getRandomItem(subs))
-    }
-  }, [randomDomain, getRandomItem])
+    refreshDomain(key)
+  }
 
-  const handleRefreshSubdomain = useCallback(() => {
-    const key = selectedKey
-    const map = domainMapRef.current
-    if (key === RANDOM_KEY) {
-      randomDomain()
-    } else {
-      const subs = map[key] ?? [key]
-      setActualDomain(getRandomItem(subs))
-    }
-  }, [selectedKey, randomDomain, getRandomItem])
+  const handleRefreshSubdomain = () => {
+    refreshDomain(selectedKey)
+  }
 
   const createEmail = async () => {
     if (!emailName.trim()) {
@@ -133,8 +117,6 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
       setLoading(false)
     }
   }
-
-  const domains = config?.topLevelDomains ?? []
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
