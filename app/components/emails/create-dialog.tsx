@@ -29,6 +29,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   const [emailName, setEmailName] = useState("")
   const [selectedKey, setSelectedKey] = useState(RANDOM_KEY)
   const [actualDomain, setActualDomain] = useState("")
+  const [refreshTick, setRefreshTick] = useState(0)
   const [expiryTime] = useState(EXPIRY_OPTIONS[0].value.toString())
   const { toast } = useToast()
   const { copyToClipboard } = useCopy()
@@ -55,6 +56,11 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
     refreshDomain(RANDOM_KEY)
   }, [config])
 
+  useEffect(() => {
+    if (refreshTick === 0) return
+    refreshDomain(selectedKeyRef.current)
+  }, [refreshTick])
+
   const generateRandomName = () => setEmailName(nanoid(8))
 
   const copyEmailAddress = () => {
@@ -67,7 +73,7 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   }
 
   const handleRefreshSubdomain = () => {
-    refreshDomain(selectedKeyRef.current)
+    setRefreshTick(t => t + 1)
   }
 
   const createEmail = async () => {
