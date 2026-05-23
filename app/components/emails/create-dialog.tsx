@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useReducer, useRef, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -46,12 +46,12 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
   }
 
   const sRef = useRef({ selectedKey: RANDOM_KEY, actualDomain: "" })
-  const [, tick] = useReducer(x => x + 1, 0)
+  const [, setTick] = useState(0)
 
   const refresh = (key: string) => {
     sRef.current.selectedKey = key
     sRef.current.actualDomain = pick(key)
-    tick()
+    setTick(t => t + 1)
   }
 
   useEffect(() => {
@@ -173,20 +173,26 @@ export function CreateDialog({ onEmailCreated }: CreateDialogProps) {
             {emailName ? (
               <div className="flex items-center gap-2 min-w-0">
                 <span className="truncate">{`${emailName}@${sRef.current.actualDomain}`}</span>
-                <div
-                  className="shrink-0 cursor-pointer hover:text-primary transition-colors"
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-auto w-auto p-0"
                   onClick={copyEmailAddress}
                   title="复制"
+                  type="button"
                 >
                   <Copy className="size-4" />
-                </div>
-                <div
-                  className="shrink-0 cursor-pointer hover:text-primary transition-colors"
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 h-auto w-auto p-0"
                   onClick={() => refresh(sRef.current.selectedKey)}
                   title="换一个二级域名"
+                  type="button"
                 >
                   <RefreshCw className="size-4" />
-                </div>
+                </Button>
               </div>
             ) : (
               <span className="text-gray-400">...</span>
