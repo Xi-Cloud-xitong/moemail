@@ -1,6 +1,6 @@
 import { NotFoundError } from "cloudflare";
 import "dotenv/config";
-import { execSync } from "node:child_process";
+import { execFileSync, execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -19,7 +19,7 @@ const CUSTOM_DOMAIN = process.env.CUSTOM_DOMAIN;
 const KV_NAMESPACE_ID = process.env.KV_NAMESPACE_ID;
 
 /**
- * 验证必要的环境变量
+ * 楠岃瘉蹇呰鐨勭幆澧冨彉閲?
  */
 const validateEnvironment = () => {
   const requiredEnvVars = ["CLOUDFLARE_ACCOUNT_ID", "CLOUDFLARE_API_TOKEN"];
@@ -33,25 +33,25 @@ const validateEnvironment = () => {
 };
 
 /**
- * 处理JSON配置文件
+ * 澶勭悊JSON閰嶇疆鏂囦欢
  */
 const setupConfigFile = (examplePath: string, targetPath: string) => {
   try {
-    // 如果目标文件已存在，则跳过
+    // 濡傛灉鐩爣鏂囦欢宸插瓨鍦紝鍒欒烦杩?
     if (existsSync(targetPath)) {
-      console.log(`✨ Configuration ${targetPath} already exists.`);
+      console.log(`鉁?Configuration ${targetPath} already exists.`);
       return;
     }
 
     if (!existsSync(examplePath)) {
-      console.log(`⚠️ Example file ${examplePath} does not exist, skipping...`);
+      console.log(`鈿狅笍 Example file ${examplePath} does not exist, skipping...`);
       return;
     }
 
     const configContent = readFileSync(examplePath, "utf-8");
     const json = JSON.parse(configContent);
 
-    // 处理自定义项目名称
+    // 澶勭悊鑷畾涔夐」鐩悕绉?
     if (PROJECT_NAME !== "moemail") {
       const wranglerFileName = targetPath.split("/").at(-1);
 
@@ -70,25 +70,25 @@ const setupConfigFile = (examplePath: string, targetPath: string) => {
       }
     }
 
-    // 处理数据库配置
+    // 澶勭悊鏁版嵁搴撻厤缃?
     if (json.d1_databases && json.d1_databases.length > 0) {
       json.d1_databases[0].database_name = DATABASE_NAME;
     }
 
-    // 写入配置文件
+    // 鍐欏叆閰嶇疆鏂囦欢
     writeFileSync(targetPath, JSON.stringify(json, null, 2));
-    console.log(`✅ Configuration ${targetPath} setup successfully.`);
+    console.log(`鉁?Configuration ${targetPath} setup successfully.`);
   } catch (error) {
-    console.error(`❌ Failed to setup ${targetPath}:`, error);
+    console.error(`鉂?Failed to setup ${targetPath}:`, error);
     throw error;
   }
 };
 
 /**
- * 设置所有Wrangler配置文件
+ * 璁剧疆鎵€鏈塛rangler閰嶇疆鏂囦欢
  */
 const setupWranglerConfigs = () => {
-  console.log("🔧 Setting up Wrangler configuration files...");
+  console.log("馃敡 Setting up Wrangler configuration files...");
 
   const configs = [
     { example: "wrangler.example.json", target: "wrangler.json" },
@@ -96,7 +96,7 @@ const setupWranglerConfigs = () => {
     { example: "wrangler.cleanup.example.json", target: "wrangler.cleanup.json" },
   ];
 
-  // 处理每个配置文件
+  // 澶勭悊姣忎釜閰嶇疆鏂囦欢
   for (const config of configs) {
     setupConfigFile(
       resolve(config.example),
@@ -106,12 +106,12 @@ const setupWranglerConfigs = () => {
 };
 
 /**
- * 更新数据库ID到所有配置文件
+ * 鏇存柊鏁版嵁搴揑D鍒版墍鏈夐厤缃枃浠?
  */
 const updateDatabaseConfig = (dbId: string) => {
-  console.log(`📝 Updating database ID (${dbId}) in configurations...`);
+  console.log(`馃摑 Updating database ID (${dbId}) in configurations...`);
 
-  // 更新所有配置文件
+  // 鏇存柊鎵€鏈夐厤缃枃浠?
   const configFiles = [
     "wrangler.json",
     "wrangler.email.json",
@@ -128,20 +128,20 @@ const updateDatabaseConfig = (dbId: string) => {
         json.d1_databases[0].database_id = dbId;
       }
       writeFileSync(configPath, JSON.stringify(json, null, 2));
-      console.log(`✅ Updated database ID in ${filename}`);
+      console.log(`鉁?Updated database ID in ${filename}`);
     } catch (error) {
-      console.error(`❌ Failed to update ${filename}:`, error);
+      console.error(`鉂?Failed to update ${filename}:`, error);
     }
   }
 };
 
 /**
- * 更新KV命名空间ID到所有配置文件
+ * 鏇存柊KV鍛藉悕绌洪棿ID鍒版墍鏈夐厤缃枃浠?
  */
 const updateKVConfig = (namespaceId: string) => {
-  console.log(`📝 Updating KV namespace ID (${namespaceId}) in configurations...`);
+  console.log(`馃摑 Updating KV namespace ID (${namespaceId}) in configurations...`);
 
-  // KV命名空间只在主wrangler.json中使用
+  // KV鍛藉悕绌洪棿鍙湪涓粀rangler.json涓娇鐢?
   const wranglerPath = resolve("wrangler.json");
   if (existsSync(wranglerPath)) {
     try {
@@ -150,18 +150,18 @@ const updateKVConfig = (namespaceId: string) => {
         json.kv_namespaces[0].id = namespaceId;
       }
       writeFileSync(wranglerPath, JSON.stringify(json, null, 2));
-      console.log(`✅ Updated KV namespace ID in wrangler.json`);
+      console.log(`鉁?Updated KV namespace ID in wrangler.json`);
     } catch (error) {
-      console.error(`❌ Failed to update wrangler.json:`, error);
+      console.error(`鉂?Failed to update wrangler.json:`, error);
     }
   }
 };
 
 /**
- * 检查并创建数据库
+ * 妫€鏌ュ苟鍒涘缓鏁版嵁搴?
  */
 const checkAndCreateDatabase = async () => {
-  console.log(`🔍 Checking if database "${DATABASE_NAME}" exists...`);
+  console.log(`馃攳 Checking if database "${DATABASE_NAME}" exists...`);
 
   try {
     const database = await getDatabase();
@@ -171,10 +171,10 @@ const checkAndCreateDatabase = async () => {
     }
 
     updateDatabaseConfig(database.uuid);
-    console.log(`✅ Database "${DATABASE_NAME}" already exists (ID: ${database.uuid})`);
+    console.log(`鉁?Database "${DATABASE_NAME}" already exists (ID: ${database.uuid})`);
   } catch (error) {
     if (error instanceof NotFoundError) {
-      console.log(`⚠️ Database not found, creating new database...`);
+      console.log(`鈿狅笍 Database not found, creating new database...`);
       try {
         const database = await createDatabase();
 
@@ -183,41 +183,41 @@ const checkAndCreateDatabase = async () => {
         }
 
         updateDatabaseConfig(database.uuid);
-        console.log(`✅ Database "${DATABASE_NAME}" created successfully (ID: ${database.uuid})`);
+        console.log(`鉁?Database "${DATABASE_NAME}" created successfully (ID: ${database.uuid})`);
       } catch (createError) {
-        console.error(`❌ Failed to create database:`, createError);
+        console.error(`鉂?Failed to create database:`, createError);
         throw createError;
       }
     } else {
-      console.error(`❌ An error occurred while checking the database:`, error);
+      console.error(`鉂?An error occurred while checking the database:`, error);
       throw error;
     }
   }
 };
 
 /**
- * 迁移数据库
+ * 杩佺Щ鏁版嵁搴?
  */
 const migrateDatabase = () => {
-  console.log("📝 Migrating remote database...");
+  console.log("馃摑 Migrating remote database...");
   try {
     execSync("pnpm run db:migrate-remote", { stdio: "inherit" });
-    console.log("✅ Database migration completed successfully");
+    console.log("鉁?Database migration completed successfully");
   } catch (error) {
-    console.error("❌ Database migration failed:", error);
+    console.error("鉂?Database migration failed:", error);
     throw error;
   }
 };
 
 /**
- * 检查并创建KV命名空间
+ * 妫€鏌ュ苟鍒涘缓KV鍛藉悕绌洪棿
  */
 const checkAndCreateKVNamespace = async () => {
-  console.log(`🔍 Checking if KV namespace "${KV_NAMESPACE_NAME}" exists...`);
+  console.log(`馃攳 Checking if KV namespace "${KV_NAMESPACE_NAME}" exists...`);
 
   if (KV_NAMESPACE_ID) {
     updateKVConfig(KV_NAMESPACE_ID);
-    console.log(`✅ User specified KV namespace (ID: ${KV_NAMESPACE_ID})`);
+    console.log(`鉁?User specified KV namespace (ID: ${KV_NAMESPACE_ID})`);
     return;
   }
 
@@ -229,55 +229,95 @@ const checkAndCreateKVNamespace = async () => {
 
     if (namespace && namespace.id) {
       updateKVConfig(namespace.id);
-      console.log(`✅ KV namespace "${KV_NAMESPACE_NAME}" found by name (ID: ${namespace.id})`);
+      console.log(`鉁?KV namespace "${KV_NAMESPACE_NAME}" found by name (ID: ${namespace.id})`);
     } else {
-      console.log("⚠️ KV namespace not found by name, creating new KV namespace...");
+      console.log("鈿狅笍 KV namespace not found by name, creating new KV namespace...");
       namespace = await createKVNamespace();
       updateKVConfig(namespace.id);
-      console.log(`✅ KV namespace "${KV_NAMESPACE_NAME}" created successfully (ID: ${namespace.id})`);
+      console.log(`鉁?KV namespace "${KV_NAMESPACE_NAME}" created successfully (ID: ${namespace.id})`);
     }
   } catch (error) {
-    console.error(`❌ An error occurred while checking the KV namespace:`, error);
+    console.error(`鉂?An error occurred while checking the KV namespace:`, error);
     throw error;
   }
 };
 
 /**
- * 检查并创建Pages项目
+ * Sync configured email domains into the SITE_CONFIG KV namespace.
+ */
+const syncEmailDomainsToKV = () => {
+  console.log("Syncing EMAIL_DOMAINS to SITE_CONFIG KV...");
+
+  const wranglerPath = resolve("wrangler.json");
+  if (!existsSync(wranglerPath)) {
+    throw new Error("wrangler.json not found, cannot sync EMAIL_DOMAINS");
+  }
+
+  const json = JSON.parse(readFileSync(wranglerPath, "utf-8"));
+  const emailDomains = json.vars?.EMAIL_DOMAINS;
+
+  if (!emailDomains || typeof emailDomains !== "string") {
+    throw new Error("EMAIL_DOMAINS not found in wrangler.json");
+  }
+
+  execFileSync(
+    "pnpm",
+    [
+      "dlx",
+      "wrangler",
+      "kv",
+      "key",
+      "put",
+      "EMAIL_DOMAINS",
+      emailDomains,
+      "--binding",
+      "SITE_CONFIG",
+      "--config",
+      "wrangler.json",
+      "--remote",
+    ],
+    { stdio: "inherit" }
+  );
+
+  console.log("EMAIL_DOMAINS synced to SITE_CONFIG KV");
+};
+
+/**
+ * 妫€鏌ュ苟鍒涘缓Pages椤圭洰
  */
 const checkAndCreatePages = async () => {
-  console.log(`🔍 Checking if project "${PROJECT_NAME}" exists...`);
+  console.log(`馃攳 Checking if project "${PROJECT_NAME}" exists...`);
 
   try {
     await getPages();
-    console.log("✅ Project already exists, proceeding with update...");
+    console.log("鉁?Project already exists, proceeding with update...");
   } catch (error) {
     if (error instanceof NotFoundError) {
-      console.log("⚠️ Project not found, creating new project...");
+      console.log("鈿狅笍 Project not found, creating new project...");
       const pages = await createPages();
 
       if (!CUSTOM_DOMAIN && pages.subdomain) {
-        console.log("⚠️ CUSTOM_DOMAIN is empty, using pages default domain...");
-        console.log("📝 Updating environment variables...");
+        console.log("鈿狅笍 CUSTOM_DOMAIN is empty, using pages default domain...");
+        console.log("馃摑 Updating environment variables...");
 
-        // 更新环境变量为默认的Pages域名
+        // 鏇存柊鐜鍙橀噺涓洪粯璁ょ殑Pages鍩熷悕
         const appUrl = `https://${pages.subdomain}`;
         updateEnvVar("CUSTOM_DOMAIN", appUrl);
       }
     } else {
-      console.error(`❌ An error occurred while checking the project:`, error);
+      console.error(`鉂?An error occurred while checking the project:`, error);
       throw error;
     }
   }
 };
 
 /**
- * 推送Pages密钥
+ * 鎺ㄩ€丳ages瀵嗛挜
  */
 const pushPagesSecret = () => {
-  console.log("🔐 Pushing environment secrets to Pages...");
+  console.log("馃攼 Pushing environment secrets to Pages...");
 
-  // 定义运行时所需的环境变量列表
+  // 瀹氫箟杩愯鏃舵墍闇€鐨勭幆澧冨彉閲忓垪琛?
   const runtimeEnvVars = [
     'AUTH_GITHUB_ID', 
     'AUTH_GITHUB_SECRET', 
@@ -287,26 +327,26 @@ const pushPagesSecret = () => {
   ];
 
   try {
-    // 确保.env文件存在
+    // 纭繚.env鏂囦欢瀛樺湪
     if (!existsSync(resolve('.env'))) {
       setupEnvFile();
     }
 
-    // 读取.env文件内容
+    // 璇诲彇.env鏂囦欢鍐呭
     const envContent = readFileSync(resolve('.env'), 'utf-8');
     
-    // 解析环境变量为对象
+    // 瑙ｆ瀽鐜鍙橀噺涓哄璞?
     const secrets: Record<string, string> = {};
     
     envContent.split('\n').forEach(line => {
       const trimmedLine = line.trim();
       
-      // 跳过注释和空行
+      // 璺宠繃娉ㄩ噴鍜岀┖琛?
       if (!trimmedLine || trimmedLine.startsWith('#')) {
         return;
       }
       
-      // 解析键值对
+      // 瑙ｆ瀽閿€煎
       const equalIndex = trimmedLine.indexOf('=');
       if (equalIndex === -1) {
         return;
@@ -315,48 +355,48 @@ const pushPagesSecret = () => {
       const key = trimmedLine.substring(0, equalIndex).trim();
       let value = trimmedLine.substring(equalIndex + 1).trim();
       
-      // 移除引号
+      // 绉婚櫎寮曞彿
       value = value.replace(/^["']|["']$/g, '');
       
-      // 只保留运行时所需的环境变量，且值不为空
+      // 鍙繚鐣欒繍琛屾椂鎵€闇€鐨勭幆澧冨彉閲忥紝涓斿€间笉涓虹┖
       if (runtimeEnvVars.includes(key) && value.length > 0) {
         secrets[key] = value;
       }
     });
 
-    // 检查是否有需要推送的secrets
+    // 妫€鏌ユ槸鍚︽湁闇€瑕佹帹閫佺殑secrets
     if (Object.keys(secrets).length === 0) {
-      console.log("⚠️ No runtime secrets found to push");
+      console.log("鈿狅笍 No runtime secrets found to push");
       return;
     }
 
-    // 创建JSON格式的临时文件
+    // 鍒涘缓JSON鏍煎紡鐨勪复鏃舵枃浠?
     const runtimeEnvFile = resolve('.env.runtime.json');
     writeFileSync(runtimeEnvFile, JSON.stringify(secrets, null, 2));
 
-    console.log(`📝 Found ${Object.keys(secrets).length} secrets to push:`, Object.keys(secrets).join(', '));
+    console.log(`馃摑 Found ${Object.keys(secrets).length} secrets to push:`, Object.keys(secrets).join(', '));
 
-    // 使用临时文件推送secrets
+    // 浣跨敤涓存椂鏂囦欢鎺ㄩ€乻ecrets
     execSync(`pnpm dlx wrangler pages secret bulk ${runtimeEnvFile}`, { 
       stdio: "inherit" 
     });
 
-    // 清理临时文件
+    // 娓呯悊涓存椂鏂囦欢
     if (existsSync(runtimeEnvFile)) {
       execSync(`rm ${runtimeEnvFile}`, { stdio: "inherit" });
     }
 
-    console.log("✅ Secrets pushed successfully");
+    console.log("鉁?Secrets pushed successfully");
   } catch (error) {
-    console.error("❌ Failed to push secrets:", error);
+    console.error("鉂?Failed to push secrets:", error);
     
-    // 确保清理临时文件
+    // 纭繚娓呯悊涓存椂鏂囦欢
     const runtimeEnvFile = resolve('.env.runtime.json');
     if (existsSync(runtimeEnvFile)) {
       try {
         execSync(`rm ${runtimeEnvFile}`, { stdio: "inherit" });
       } catch (cleanupError) {
-        console.error("⚠️ Failed to cleanup temporary file:", cleanupError);
+        console.error("鈿狅笍 Failed to cleanup temporary file:", cleanupError);
       }
     }
     
@@ -365,63 +405,63 @@ const pushPagesSecret = () => {
 };
 
 /**
- * 部署Pages应用
+ * 閮ㄧ讲Pages搴旂敤
  */
 const deployPages = () => {
-  console.log("🚧 Deploying to Cloudflare Pages...");
+  console.log("馃毀 Deploying to Cloudflare Pages...");
   try {
     execSync("pnpm run deploy:pages", { stdio: "inherit" });
-    console.log("✅ Pages deployment completed successfully");
+    console.log("鉁?Pages deployment completed successfully");
   } catch (error) {
-    console.error("❌ Pages deployment failed:", error);
+    console.error("鉂?Pages deployment failed:", error);
     throw error;
   }
 };
 
 /**
- * 部署Email Worker
+ * 閮ㄧ讲Email Worker
  */
 const deployEmailWorker = () => {
-  console.log("🚧 Deploying Email Worker...");
+  console.log("馃毀 Deploying Email Worker...");
   try {
     execSync("pnpm dlx wrangler deploy --config wrangler.email.json", { stdio: "inherit" });
-    console.log("✅ Email Worker deployed successfully");
+    console.log("鉁?Email Worker deployed successfully");
   } catch (error) {
-    console.error("❌ Email Worker deployment failed:", error);
-    // 继续执行而不中断
+    console.error("鉂?Email Worker deployment failed:", error);
+    // 缁х画鎵ц鑰屼笉涓柇
   }
 };
 
 /**
- * 部署Cleanup Worker
+ * 閮ㄧ讲Cleanup Worker
  */
 const deployCleanupWorker = () => {
-  console.log("🚧 Deploying Cleanup Worker...");
+  console.log("馃毀 Deploying Cleanup Worker...");
   try {
     execSync("pnpm dlx wrangler deploy --config wrangler.cleanup.json", { stdio: "inherit" });
-    console.log("✅ Cleanup Worker deployed successfully");
+    console.log("鉁?Cleanup Worker deployed successfully");
   } catch (error) {
-    console.error("❌ Cleanup Worker deployment failed:", error);
-    // 继续执行而不中断
+    console.error("鉂?Cleanup Worker deployment failed:", error);
+    // 缁х画鎵ц鑰屼笉涓柇
   }
 };
 
 /**
- * 创建或更新环境变量文件
+ * 鍒涘缓鎴栨洿鏂扮幆澧冨彉閲忔枃浠?
  */
 const setupEnvFile = () => {
-  console.log("📄 Setting up environment file...");
+  console.log("馃搫 Setting up environment file...");
   const envFilePath = resolve(".env");
   const envExamplePath = resolve(".env.example");
 
-  // 如果.env文件不存在，则从.env.example复制创建
+  // 濡傛灉.env鏂囦欢涓嶅瓨鍦紝鍒欎粠.env.example澶嶅埗鍒涘缓
   if (!existsSync(envFilePath) && existsSync(envExamplePath)) {
-    console.log("⚠️ .env file does not exist, creating from example...");
+    console.log("鈿狅笍 .env file does not exist, creating from example...");
 
-    // 从示例文件复制
+    // 浠庣ず渚嬫枃浠跺鍒?
     let envContent = readFileSync(envExamplePath, "utf-8");
 
-    // 填充当前的环境变量
+    // 濉厖褰撳墠鐨勭幆澧冨彉閲?
     const envVarMatches = envContent.match(/^([A-Z_]+)\s*=\s*".*?"/gm);
     if (envVarMatches) {
       for (const match of envVarMatches) {
@@ -434,23 +474,23 @@ const setupEnvFile = () => {
     }
 
     writeFileSync(envFilePath, envContent);
-    console.log("✅ .env file created from example");
+    console.log("鉁?.env file created from example");
   } else if (existsSync(envFilePath)) {
-    console.log("✨ .env file already exists");
+    console.log("鉁?.env file already exists");
   } else {
-    console.error("❌ .env.example file not found!");
+    console.error("鉂?.env.example file not found!");
     throw new Error(".env.example file not found");
   }
 };
 
 /**
- * 更新环境变量
+ * 鏇存柊鐜鍙橀噺
  */
 const updateEnvVar = (name: string, value: string) => {
-  // 首先更新进程环境变量
+  // 棣栧厛鏇存柊杩涚▼鐜鍙橀噺
   process.env[name] = value;
 
-  // 然后尝试更新.env文件
+  // 鐒跺悗灏濊瘯鏇存柊.env鏂囦欢
   const envFilePath = resolve(".env");
   if (!existsSync(envFilePath)) {
     setupEnvFile();
@@ -466,15 +506,15 @@ const updateEnvVar = (name: string, value: string) => {
   }
 
   writeFileSync(envFilePath, envContent);
-  console.log(`✅ Updated ${name} in .env file`);
+  console.log(`鉁?Updated ${name} in .env file`);
 };
 
 /**
- * 主函数
+ * 涓诲嚱鏁?
  */
 const main = async () => {
   try {
-    console.log("🚀 Starting deployment process...");
+    console.log("馃殌 Starting deployment process...");
 
     validateEnvironment();
     setupEnvFile();
@@ -482,17 +522,19 @@ const main = async () => {
     await checkAndCreateDatabase();
     migrateDatabase();
     await checkAndCreateKVNamespace();
+    syncEmailDomainsToKV();
     await checkAndCreatePages();
     pushPagesSecret();
     deployPages();
     deployEmailWorker();
     deployCleanupWorker();
 
-    console.log("🎉 Deployment completed successfully");
+    console.log("馃帀 Deployment completed successfully");
   } catch (error) {
-    console.error("❌ Deployment failed:", error);
+    console.error("鉂?Deployment failed:", error);
     process.exit(1);
   }
 };
 
 main();
+
