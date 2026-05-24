@@ -255,9 +255,14 @@ const syncEmailDomainsToKV = () => {
 
   const json = JSON.parse(readFileSync(wranglerPath, "utf-8"));
   const emailDomains = json.vars?.EMAIL_DOMAINS;
+  const namespaceId = json.kv_namespaces?.[0]?.id;
 
   if (!emailDomains || typeof emailDomains !== "string") {
     throw new Error("EMAIL_DOMAINS not found in wrangler.json");
+  }
+
+  if (!namespaceId || typeof namespaceId !== "string") {
+    throw new Error("SITE_CONFIG KV namespace ID not found in wrangler.json");
   }
 
   execFileSync(
@@ -270,11 +275,8 @@ const syncEmailDomainsToKV = () => {
       "put",
       "EMAIL_DOMAINS",
       emailDomains,
-      "--binding",
-      "SITE_CONFIG",
-      "--config",
-      "wrangler.json",
-      "--remote",
+      "--namespace-id",
+      namespaceId,
     ],
     { stdio: "inherit" }
   );
