@@ -1,24 +1,26 @@
-{
-  "$schema": "node_modules/wrangler/config-schema.json",
-  "name": "moemail",
-  "compatibility_date": "2024-03-20",
-  "compatibility_flags": ["nodejs_compat"],
-  "pages_build_output_dir": ".vercel/output/static",
-  "d1_databases": [
-    {
-      "binding": "DB",
-      "database_name": "moemail",
-      "database_id": "${DATABASE_ID}",
-      "migrations_dir": "drizzle"
-    }
-  ],
-  "kv_namespaces": [
-    {
-      "binding": "SITE_CONFIG",
-      "id": "${KV_NAMESPACE_ID}"
-    }
-  ],
-  "vars": {
-    "EMAIL_DOMAINS": "0355650.xyz,mail.0355650.xyz,temp.0355650.xyz,hi.0355650.xyz,me.0355650.xyz,go.0355650.xyz,fun.0355650.xyz,cool.0355650.xyz,fast.0355650.xyz,vip.0355650.xyz,xi-clouds.cn,mail.xi-clouds.cn,temp.xi-clouds.cn,hi.xi-clouds.cn,me.xi-clouds.cn,go.xi-clouds.cn,fun.xi-clouds.cn,cool.xi-clouds.cn,fast.xi-clouds.cn,vip.xi-clouds.cn,xi-clouds.top,mail.xi-clouds.top,temp.xi-clouds.top,hi.xi-clouds.top,me.xi-clouds.top,go.xi-clouds.top,fun.xi-clouds.top,cool.xi-clouds.top,fast.xi-clouds.top,vip.xi-clouds.top,xi-cloud.top,mail.xi-cloud.top,temp.xi-cloud.top,hi.xi-cloud.top,me.xi-cloud.top,go.xi-cloud.top,fun.xi-cloud.top,cool.xi-cloud.top,fast.xi-cloud.top,vip.xi-cloud.top,xi-work.cn,mail.xi-work.cn,temp.xi-work.cn,hi.xi-work.cn,me.xi-work.cn,go.xi-work.cn,fun.xi-work.cn,cool.xi-work.cn,fast.xi-work.cn,vip.xi-work.cn"
-  }
+﻿{
+    "$schema":  "node_modules/wrangler/config-schema.json",
+    "name":  "moemail",
+    "compatibility_date":  "2024-03-20",
+    "compatibility_flags":  [
+                                "nodejs_compat"
+                            ],
+    "pages_build_output_dir":  ".vercel/output/static",
+    "d1_databases":  [
+                         {
+                             "binding":  "DB",
+                             "database_name":  "moemail",
+                             "database_id":  "${DATABASE_ID}",
+                             "migrations_dir":  "drizzle"
+                         }
+                     ],
+    "kv_namespaces":  [
+                          {
+                              "binding":  "SITE_CONFIG",
+                              "id":  "${KV_NAMESPACE_ID}"
+                          }
+                      ],
+    "vars":  {
+                 "EMAIL_DOMAINS":  "0355650.xyz,inbox.0355650.xyz,post.0355650.xyz,letter.0355650.xyz,box.0355650.xyz,drop.0355650.xyz,send.0355650.xyz,relay.0355650.xyz,cloud.0355650.xyz,edge.0355650.xyz,xi-clouds.cn,inbox.xi-clouds.cn,post.xi-clouds.cn,letter.xi-clouds.cn,box.xi-clouds.cn,drop.xi-clouds.cn,send.xi-clouds.cn,relay.xi-clouds.cn,cloud.xi-clouds.cn,edge.xi-clouds.cn,xi-clouds.top,inbox.xi-clouds.top,post.xi-clouds.top,letter.xi-clouds.top,box.xi-clouds.top,drop.xi-clouds.top,send.xi-clouds.top,relay.xi-clouds.top,cloud.xi-clouds.top,edge.xi-clouds.top,xi-cloud.top,inbox.xi-cloud.top,post.xi-cloud.top,letter.xi-cloud.top,box.xi-cloud.top,drop.xi-cloud.top,send.xi-cloud.top,relay.xi-cloud.top,cloud.xi-cloud.top,edge.xi-cloud.top,xi-work.cn,inbox.xi-work.cn,post.xi-work.cn,letter.xi-work.cn,box.xi-work.cn,drop.xi-work.cn,send.xi-work.cn,relay.xi-work.cn,cloud.xi-work.cn,edge.xi-work.cn"
+             }
 }
