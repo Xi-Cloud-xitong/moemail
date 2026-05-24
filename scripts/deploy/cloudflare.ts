@@ -97,3 +97,11 @@ export const createKVNamespace = async () => {
 
   return kvNamespace;
 };
+
+export const putKVValue = async (namespaceId: string, key: string, value: string) => {
+  return client.kv.namespaces.values.update(namespaceId, key, {
+    account_id: CF_ACCOUNT_ID,
+    metadata: "",
+    value,
+  });
+};

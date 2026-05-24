@@ -1,6 +1,6 @@
 import { NotFoundError } from "cloudflare";
 import "dotenv/config";
-import { execFileSync, execSync } from "node:child_process";
+import { execSync } from "node:child_process";
 import { readFileSync, writeFileSync, existsSync } from "node:fs";
 import { resolve } from "node:path";
 import {
@@ -10,6 +10,7 @@ import {
   getDatabase,
   getKVNamespaceList,
   getPages,
+  putKVValue,
 } from "./cloudflare";
 
 const PROJECT_NAME = process.env.PROJECT_NAME || "moemail";
@@ -245,7 +246,7 @@ const checkAndCreateKVNamespace = async () => {
 /**
  * Sync configured email domains into the SITE_CONFIG KV namespace.
  */
-const syncEmailDomainsToKV = () => {
+const syncEmailDomainsToKV = async () => {
   console.log("Syncing EMAIL_DOMAINS to SITE_CONFIG KV...");
 
   const wranglerPath = resolve("wrangler.json");
@@ -265,21 +266,7 @@ const syncEmailDomainsToKV = () => {
     throw new Error("SITE_CONFIG KV namespace ID not found in wrangler.json");
   }
 
-  execFileSync(
-    "pnpm",
-    [
-      "dlx",
-      "wrangler",
-      "kv",
-      "key",
-      "put",
-      "EMAIL_DOMAINS",
-      emailDomains,
-      "--namespace-id",
-      namespaceId,
-    ],
-    { stdio: "inherit" }
-  );
+  await putKVValue(namespaceId, "EMAIL_DOMAINS", emailDomains);
 
   console.log("EMAIL_DOMAINS synced to SITE_CONFIG KV");
 };
@@ -524,7 +511,7 @@ const main = async () => {
     await checkAndCreateDatabase();
     migrateDatabase();
     await checkAndCreateKVNamespace();
-    syncEmailDomainsToKV();
+    await syncEmailDomainsToKV();
     await checkAndCreatePages();
     pushPagesSecret();
     deployPages();
