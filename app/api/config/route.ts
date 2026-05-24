@@ -19,7 +19,7 @@ export async function GET() {
     turnstileSecretKey
   ] = await Promise.all([
     env.SITE_CONFIG.get("DEFAULT_ROLE"),
-    env.SITE_CONFIG.get("EMAIL_DOMAINS"),
+    env.EMAIL_DOMAINS || env.SITE_CONFIG.get("EMAIL_DOMAINS"),
     env.SITE_CONFIG.get("ADMIN_CONTACT"),
     env.SITE_CONFIG.get("MAX_EMAILS"),
     env.SITE_CONFIG.get("TURNSTILE_ENABLED"),
